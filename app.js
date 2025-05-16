@@ -7,7 +7,7 @@ var uiController = (function () {
     inputValue: ".add__value",
     addBtn: ".add__btn",
   };
-  ///////
+  /////// private func////
   return {
     getInput: function () {
       return {
@@ -26,7 +26,7 @@ var uiController = (function () {
 
 //sanhuutei ajillah controller
 var financeController = (function () {
-  //orlogo,zarlaga hadgalah object
+  //orlogo,zarlaga hadgalah object///private data////
   var Income = function (id, description, value) {
     this.id = id;
     this.description = description;
@@ -40,7 +40,7 @@ var financeController = (function () {
   };
 
   var data = {
-    allItems: {
+    items: {
       inc: [],
       exp: [],
     },
@@ -49,14 +49,23 @@ var financeController = (function () {
       exp: 0,
     },
   };
+  //closure ashiglan public service bolgoj bn/////
+  return {
+    addItem: function (type, desc, val) {
+      data.items[type].push;
+    },
+  };
 })();
 
 //programiin holbogch controller
 var appController = (function (uiController, financeController) {
   var ctrlAddItem = function () {
     //1.oruulah ugugdliig delgetsees olj avna.
-    console.log(uiController.getInput());
+    var input = uiController.getInput();
+    console.log(input);
+
     //2.olj avsn ugugdluudee sanhuugiin controllerm damjuulj tend hadgalna.
+    financeController.addItem(input.type, input.discription, input.value);
     //3.olj avsan ugugdluudee web deeree tohiroh hesegt ni gargana.
     //4.tusviig tootsoolno.
     //5.etssiin uldegdel, tootsoog delgetsd gargana
@@ -84,9 +93,3 @@ var appController = (function (uiController, financeController) {
 })(uiController, financeController);
 
 appController.init();
-
-var i1 = new Income(1, "Salary", 3500000);
-var i2 = new Income(2, "Lottery", 50000000);
-
-console.log(i1);
-console.log(i2);
