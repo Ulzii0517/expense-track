@@ -1,25 +1,73 @@
 //delgetstei ajillah controller
 var uiController = (function () {
-  //1.html,css class-g uur object hiin public bolgoh
+  //1.html,css class-g uur object hiih
   var DOMStrings = {
     inputType: ".add__type",
-    inputDiscription: ".add__description",
+    inputDescription: ".add__description",
     inputValue: ".add__value",
     addBtn: ".add__btn",
+    incomeList: ".income__list",
+    expenseList: ".expenses__list",
   };
+
   /////// private func////
   return {
     getInput: function () {
       return {
         type: document.querySelector(DOMStrings.inputType).value,
-        discription: document.querySelector(DOMStrings.inputDiscription).value,
-        value: document.querySelector(DOMStrings.inputValue).value,
+        description: document.querySelector(DOMStrings.inputDescription).value,
+        ////////parseInt ni buhel too bolgono utguudiig hoorond nemeh function
+        value: parseInt(document.querySelector(DOMStrings.inputValue).value),
       };
     },
 
     //2.DOMStrings-ee function bolgov
     getDomstrings: function () {
       return DOMStrings;
+    },
+    //CLEAR HIIH FUNCTION!!! haisan ur dungee tseverleh function
+    clearFields: function () {
+      var fields = document.querySelectorAll(
+        DOMStrings.inputDescription + "," + DOMStrings.inputValue
+      );
+
+      //Convert List to Array// garj irsn ur dungee slice hiih
+      var fieldsArr = Array.prototype.slice.call(fields);
+
+      fieldsArr.forEach(function (el, index, array) {
+        el.value = "";
+      });
+
+      //  for (var i = 0; i < fieldsArr.length; i++) {
+      //   fieldsArr[i].value = "";
+      // }
+
+      // CURSORoo ehnii 0 dahi array deer avaachih uildel!!! focus ni cursor hna bgaag zaadag function
+      fieldsArr[0].focus();
+    },
+
+    ///////orlogo,zarlaga-iig ui deer haruulah
+    addListItem: function (item, type) {
+      //orlogo zarlagiin elementiig aguulsan html-iig beltgene.
+      var html, list;
+      if (type === "inc") {
+        //html-ees
+        list = DOMStrings.incomeList;
+
+        html =
+          '<div class="item clearfix" id="income-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div> </div></div>';
+      } else {
+        list = DOMStrings.expenseList;
+
+        html =
+          '<div class="item clearfix" id="expense-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      }
+      //ter html dotroo orlogo zarlagiin utguudiig replace ashiglaj ugnu.
+      html = html.replace("%id%", item.id);
+      html = html.replace("$$DESCRIPTION$$", item.description);
+      html = html.replace("$$VALUE$$", item.value);
+      //beltgesen html ee dom ruu hiij ugnu
+      document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
   };
 })();
@@ -38,7 +86,15 @@ var financeController = (function () {
     this.description = description;
     this.value = value;
   };
+  var calculateTotal = function (type) {
+    var sum = 0;
+    data.items[type].forEach(function (el) {
+      sum = sum + el.value;
+    });
+    data.totals[type] = sum;
+  };
 
+  //private date
   var data = {
     items: {
       inc: [],
@@ -48,9 +104,35 @@ var financeController = (function () {
       inc: 0,
       exp: 0,
     },
+
+    budget: 0,
+
+    precent: 0,
   };
+
   //closure ashiglan public service bolgoj bn/////
   return {
+    ///////ORLOGO, ZARLAGA TOOTSOOLOH FUNCTION/////////////////
+    calculateBudget: function () {
+      calculateTotal("inc");
+      calculateTotal("exp");
+
+      //////budget-iig shineer tootsoolno/////
+      data.budget = data.totals.inc - data.totals.exp;
+
+      ////////ORLOGO.ZARLAGA-iin huviig tootsoolno/////
+      data.precent = Math.round((data.totals.exp / data.totals.inc) * 100);
+    },
+    getBudget: function () {
+      return {
+        budget: data.budget,
+        precent: data.precent,
+        totalInc: data.totals.inc,
+        totalExp: data.totals.exp,
+      };
+    },
+
+    ///////////////////////////////////////////
     addItem: function (type, desc, val) {
       var item, id;
 
@@ -59,12 +141,14 @@ var financeController = (function () {
         id = data.items[type][data.items[type].length - 1].id + 1;
       }
 
-      if (type == "inc") {
+      if (type === "inc") {
         item = new Income(id, desc, val);
       } else {
         item = new Expense(id, desc, val);
       }
       data.items[type].push(item);
+
+      return item;
     },
 
     seeData: function () {
@@ -78,14 +162,31 @@ var appController = (function (uiController, financeController) {
   var ctrlAddItem = function () {
     //1.oruulah ugugdliig delgetsees olj avna.
     var input = uiController.getInput();
-    console.log(input);
 
-    //2.olj avsn ugugdluudee sanhuugiin controllerm damjuulj tend hadgalna.
-    financeController.addItem(input.type, input.discription, input.value);
-    //3.olj avsan ugugdluudee web deeree tohiroh hesegt ni gargana.
-    //4.tusviig tootsoolno.
-    //5.etssiin uldegdel, tootsoog delgetsd gargana
+    ////////HOOSON MUR gargaj bgaag boliulah condition(zaaval 2ula hooson bj yu ch garj irehgui)
+    if (input.description !== "" && input.value !== "") {
+      //2.olj avsn ugugdluudee sanhuugiin controllerm damjuulj tend hadgalna.
+      var item = financeController.addItem(
+        input.type,
+        input.description,
+        input.value
+      );
+
+      //3.olj avsan ugugdluudee web deeree tohiroh hesegt ni gargana.
+      uiController.addListItem(item, input.type);
+      uiController.clearFields();
+
+      //4.tusviig tootsoolno.
+      financeController.calculateBudget();
+
+      //5.etssiin uldegdel
+      var budget = financeController.getBudget();
+
+      //6.tusviin tootsoog delgetsend gargana
+      console.log(budget);
+    }
   };
+  ////////////////////////////
 
   var setupEventListeners = function () {
     //3.DOM public ugugdul bolgon damjuulav
@@ -95,14 +196,16 @@ var appController = (function (uiController, financeController) {
       ctrlAddItem();
     });
 
-    document.addEventListener("keypress", function (event) {
-      if (KeyboardEvent.keyCode === 13 || UIEvent.which === 13) ctrlAddItem();
+    document.addEventListener("keydown", function () {
+      if (event.key === "Enter") {
+        ctrlAddItem();
+      }
     });
   };
 
   return {
     init: function () {
-      console.log("Starting app...");
+      console.log("App starting...");
       setupEventListeners();
     },
   };
