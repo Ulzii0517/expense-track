@@ -8,6 +8,10 @@ var uiController = (function () {
     addBtn: ".add__btn",
     incomeList: ".income__list",
     expenseList: ".expenses__list",
+    budgetLabel: ".budget__value",
+    incomeLabel: ".budget__income--value",
+    expenseLabel: ".budget__expenses--value",
+    percentageLabel: ".budget__expenses--percentage",
   };
 
   /////// private func////
@@ -44,6 +48,23 @@ var uiController = (function () {
 
       // CURSORoo ehnii 0 dahi array deer avaachih uildel!!! focus ni cursor hna bgaag zaadag function
       fieldsArr[0].focus();
+    },
+
+    showBudget: function (budget) {
+      document.querySelector(DOMStrings.budgetLabel).textContent =
+        budget.budget;
+      document.querySelector(DOMStrings.incomeLabel).textContent =
+        budget.totalInc;
+      document.querySelector(DOMStrings.expenseLabel).textContent =
+        budget.totalExp;
+
+      if (budget.percent !== 0) {
+        document.querySelector(DOMStrings.percentageLabel).textContent =
+          budget.percent + "%";
+      } else {
+        document.querySelector(DOMStrings.percentageLabel).textContent =
+          budget.percent;
+      }
     },
 
     ///////orlogo,zarlaga-iig ui deer haruulah
@@ -86,6 +107,8 @@ var financeController = (function () {
     this.description = description;
     this.value = value;
   };
+
+  ///////////ORLOGO ZARLAGA-iin tusad ni niilber oloh//////
   var calculateTotal = function (type) {
     var sum = 0;
     data.items[type].forEach(function (el) {
@@ -107,7 +130,7 @@ var financeController = (function () {
 
     budget: 0,
 
-    precent: 0,
+    percent: 0,
   };
 
   //closure ashiglan public service bolgoj bn/////
@@ -121,12 +144,12 @@ var financeController = (function () {
       data.budget = data.totals.inc - data.totals.exp;
 
       ////////ORLOGO.ZARLAGA-iin huviig tootsoolno/////
-      data.precent = Math.round((data.totals.exp / data.totals.inc) * 100);
+      data.percent = Math.round((data.totals.exp / data.totals.inc) * 100);
     },
     getBudget: function () {
       return {
         budget: data.budget,
-        precent: data.precent,
+        percent: data.percent,
         totalInc: data.totals.inc,
         totalExp: data.totals.exp,
       };
@@ -183,7 +206,7 @@ var appController = (function (uiController, financeController) {
       var budget = financeController.getBudget();
 
       //6.tusviin tootsoog delgetsend gargana
-      console.log(budget);
+      uiController.showBudget(budget);
     }
   };
   ////////////////////////////
@@ -206,6 +229,12 @@ var appController = (function (uiController, financeController) {
   return {
     init: function () {
       console.log("App starting...");
+      uiController.showBudget({
+        budget: 0,
+        percent: 0,
+        totalInc: 0,
+        totalExp: 0,
+      });
       setupEventListeners();
     },
   };
