@@ -12,6 +12,7 @@ var uiController = (function () {
     incomeLabel: ".budget__income--value",
     expenseLabel: ".budget__expenses--value",
     percentageLabel: ".budget__expenses--percentage",
+    containerDiv: ".container",
   };
 
   /////// private func////
@@ -50,6 +51,7 @@ var uiController = (function () {
       fieldsArr[0].focus();
     },
 
+    /////////////////budget info-g ui haruulah/////////////////
     showBudget: function (budget) {
       document.querySelector(DOMStrings.budgetLabel).textContent =
         budget.budget;
@@ -57,7 +59,7 @@ var uiController = (function () {
         budget.totalInc;
       document.querySelector(DOMStrings.expenseLabel).textContent =
         budget.totalExp;
-
+      ///////////0-ees busad ued % garch ireh////////
       if (budget.percent !== 0) {
         document.querySelector(DOMStrings.percentageLabel).textContent =
           budget.percent + "%";
@@ -65,6 +67,12 @@ var uiController = (function () {
         document.querySelector(DOMStrings.percentageLabel).textContent =
           budget.percent;
       }
+      //////////////////////////////////////
+    },
+    //////id-aar ni barij avaad parent uguud tegeed child boloh el-iig remove hiiv///////
+    deleteListItem: function (id) {
+      var el = document.getElementById(id);
+      el.parentNode.removeChild(el);
     },
 
     ///////orlogo,zarlaga-iig ui deer haruulah
@@ -76,12 +84,12 @@ var uiController = (function () {
         list = DOMStrings.incomeList;
 
         html =
-          '<div class="item clearfix" id="income-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div> </div></div>';
+          '<div class="item clearfix" id="inc-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div> </div></div>';
       } else {
         list = DOMStrings.expenseList;
 
         html =
-          '<div class="item clearfix" id="expense-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+          '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">$$VALUE$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       }
       //ter html dotroo orlogo zarlagiin utguudiig replace ashiglaj ugnu.
       html = html.replace("%id%", item.id);
@@ -155,7 +163,20 @@ var financeController = (function () {
       };
     },
 
-    ///////////////////////////////////////////
+    //////////////////delete hiih function////////////
+
+    deleteItem: function (type, id) {
+      var ids = data.items[type].map(function (el) {
+        return el.id;
+      });
+
+      var index = ids.indexOf(id);
+
+      if (index !== -1) {
+        data.items[type].splice(index, 1);
+      }
+    },
+    /////////////////////////////////////////
     addItem: function (type, desc, val) {
       var item, id;
 
@@ -224,17 +245,40 @@ var appController = (function (uiController, financeController) {
         ctrlAddItem();
       }
     });
+    /////////tom div boloh container-iig ni olj barin ustgah tovch///////////
+    document
+      .querySelector(DOM.containerDiv)
+      .addEventListener("click", function (event) {
+        var id = event.target.parentNode.parentNode.parentNode.parentNode.id;
+
+        //////type bolon id ni tusad ni salgah//////
+        if (id) {
+          var arr = id.split("-");
+          var type = arr[0];
+          var itemId = parseInt(arr[1]);
+
+          //1.sanhuugiin modulaas type, id ashiglaad ustgana.
+          financeController.deleteItem(type, itemId);
+
+          //2.delgets deerees ene elementiig ustgana.
+          uiController.deleteListItem(id);
+          //3.uldegdel tootsoog shinechilj haruulna.
+        }
+      });
+    ////////
   };
 
   return {
     init: function () {
       console.log("App starting...");
+      ////////refresh bolsnii dra, dungee oruulsnii daraa bugd 0 bolgoh/////
       uiController.showBudget({
         budget: 0,
         percent: 0,
         totalInc: 0,
         totalExp: 0,
       });
+      //////////////////////////////
       setupEventListeners();
     },
   };
