@@ -55,6 +55,23 @@ var uiController = (function () {
       document.querySelector(DOMStrings.dateLabel).textContent =
         today.getFullYear() + " оны " + today.getMonth() + " сарын төсөв";
     },
+    /////////type solij ungiig uurchluh function,TOGGLE///////
+    changeType: function () {
+      var fields = document.querySelectorAll(
+        DOMStrings.inputType +
+          ", " +
+          DOMStrings.inputDescription +
+          ", " +
+          DOMStrings.inputValue
+      );
+
+      nodeListForEach(fields, function (el) {
+        el.classList.toggle("red-focus");
+      });
+
+      document.querySelector(DOMStrings.addBtn).classList.toggle("red");
+    },
+    ///////////////////////////////////
     getInput: function () {
       return {
         type: document.querySelector(DOMStrings.inputType).value,
@@ -343,6 +360,10 @@ var appController = (function (uiController, financeController) {
         ctrlAddItem();
       }
     });
+    /////////INC,EXP uurchlugduhud ungu uur blno///////////////////
+    document
+      .querySelector(DOM.inputType)
+      .addEventListener("change", uiController.changeType);
     /////////tom div boloh container-iig ni olj barin ustgah tovch///////////
     document
       .querySelector(DOM.containerDiv)
