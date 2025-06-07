@@ -13,10 +13,48 @@ var uiController = (function () {
     expenseLabel: ".budget__expenses--value",
     percentageLabel: ".budget__expenses--percentage",
     containerDiv: ".container",
+    expensePercentageLabel: ".item__percentage",
+    dateLabel: ".budget__title--month",
+  };
+
+  var nodeListForEach = function (list, callback) {
+    for (var i = 0; i < list.length; i++) {
+      callback(list[i], i);
+    }
+  };
+
+  //////mungun dungiin dund taslal oruulah
+  var formatMoney = function (numb, type) {
+    numb = "" + numb;
+    var x = numb.split("").reverse().join("");
+
+    var y = "";
+    var count = 1;
+
+    for (var i = 0; i < x.length; i++) {
+      y = y + x[i];
+
+      if (count % 3 === 0) y = y + ",";
+      count++;
+    }
+
+    var z = y.split("").reverse().join("");
+
+    if (z[0] === ",") z = z.substring(1, z.length - 0);
+
+    if (type === "inc") z = "+ " + z;
+    else z = "- " + z;
+
+    return z;
   };
 
   /////// private func////
   return {
+    displayDate: function () {
+      var today = new Date();
+      document.querySelector(DOMStrings.dateLabel).textContent =
+        today.getFullYear() + " оны " + today.getMonth() + " сарын төсөв";
+    },
     getInput: function () {
       return {
         type: document.querySelector(DOMStrings.inputType).value,
@@ -24,6 +62,17 @@ var uiController = (function () {
         ////////parseInt ni buhel too bolgono utguudiig hoorond nemeh function
         value: parseInt(document.querySelector(DOMStrings.inputValue).value),
       };
+    },
+
+    displayPercentages: function (allPercentages) {
+      //zarlagiin nodeList-iig oloh
+      var elements = document.querySelectorAll(
+        DOMStrings.expensePercentageLabel
+      );
+
+      nodeListForEach(elements, function (el, index) {
+        el.textContent = allPercentages[index];
+      });
     },
 
     //2.DOMStrings-ee function bolgov
@@ -53,12 +102,22 @@ var uiController = (function () {
 
     /////////////////budget info-g ui haruulah/////////////////
     showBudget: function (budget) {
-      document.querySelector(DOMStrings.budgetLabel).textContent =
-        budget.budget;
-      document.querySelector(DOMStrings.incomeLabel).textContent =
-        budget.totalInc;
-      document.querySelector(DOMStrings.expenseLabel).textContent =
-        budget.totalExp;
+      var type;
+      if (budget.budget > 0) type = "inc";
+      else type = "exp";
+
+      document.querySelector(DOMStrings.budgetLabel).textContent = formatMoney(
+        budget.budget,
+        type
+      );
+      document.querySelector(DOMStrings.incomeLabel).textContent = formatMoney(
+        budget.totalInc,
+        "inc"
+      );
+      document.querySelector(DOMStrings.expenseLabel).textContent = formatMoney(
+        budget.totalExp,
+        "exp"
+      );
       ///////////0-ees busad ued % garch ireh////////
       if (budget.percent !== 0) {
         document.querySelector(DOMStrings.percentageLabel).textContent =
@@ -75,7 +134,7 @@ var uiController = (function () {
       el.parentNode.removeChild(el);
     },
 
-    ///////orlogo,zarlaga-iig ui deer haruulah
+    ///////orlogo,zarlaga-iig delgets deer haruulah
     addListItem: function (item, type) {
       //orlogo zarlagiin elementiig aguulsan html-iig beltgene.
       var html, list;
@@ -94,7 +153,7 @@ var uiController = (function () {
       //ter html dotroo orlogo zarlagiin utguudiig replace ashiglaj ugnu.
       html = html.replace("%id%", item.id);
       html = html.replace("$$DESCRIPTION$$", item.description);
-      html = html.replace("$$VALUE$$", item.value);
+      html = html.replace("$$VALUE$$", formatMoney(item.value, type));
       //beltgesen html ee dom ruu hiij ugnu
       document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
@@ -114,8 +173,18 @@ var financeController = (function () {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
   };
 
+  Expense.prototype.calcPercentage = function (totalIncome) {
+    if (totalIncome > 0)
+      this.percentage = Math.round((this.value / totalIncome) * 100);
+    else this.percentage = 0;
+  };
+
+  Expense.prototype.getPercentage = function () {
+    return this.percentage;
+  };
   ///////////ORLOGO ZARLAGA-iin tusad ni niilber oloh//////
   var calculateTotal = function (type) {
     var sum = 0;
@@ -152,7 +221,23 @@ var financeController = (function () {
       data.budget = data.totals.inc - data.totals.exp;
 
       ////////ORLOGO.ZARLAGA-iin huviig tootsoolno/////
-      data.percent = Math.round((data.totals.exp / data.totals.inc) * 100);
+      if (data.totals.inc > 0)
+        data.percent = Math.round((data.totals.exp / data.totals.inc) * 100);
+      else data.percent = 0;
+    },
+    ///////////////////////////////////
+
+    calculatePercentages: function () {
+      data.items.exp.forEach(function (el) {
+        el.calcPercentage(data.totals.inc);
+      });
+    },
+
+    getPercentages: function () {
+      var allPercentages = data.items.exp.map(function (el) {
+        return el.getPercentage();
+      });
+      return allPercentages;
     },
     getBudget: function () {
       return {
@@ -163,7 +248,7 @@ var financeController = (function () {
       };
     },
 
-    //////////////////delete hiih function////////////
+    //////////////////Ustgah function////////////
 
     deleteItem: function (type, id) {
       var ids = data.items[type].map(function (el) {
@@ -220,17 +305,30 @@ var appController = (function (uiController, financeController) {
       uiController.addListItem(item, input.type);
       uiController.clearFields();
 
-      //4.tusviig tootsoolno.
-      financeController.calculateBudget();
-
-      //5.etssiin uldegdel
-      var budget = financeController.getBudget();
-
-      //6.tusviin tootsoog delgetsend gargana
-      uiController.showBudget(budget);
+      //////budgetiig shineer tootsoolood delgetsed uzuulne
+      updateBudget();
     }
   };
   ////////////////////////////
+
+  var updateBudget = function () {
+    //4.tusviig tootsoolno.
+    financeController.calculateBudget();
+
+    //5.etssiin uldegdel
+    var budget = financeController.getBudget();
+
+    //6.tusviin tootsoog delgetsend gargana
+    uiController.showBudget(budget);
+
+    //7.elementuudiin huviig tootsoolno
+    financeController.calculatePercentages();
+
+    //8.elementuudiin huviig huleej avna
+    var allPercentages = financeController.getPercentages();
+    //9.edgeer huviig delgetsend gargana
+    uiController.displayPercentages(allPercentages);
+  };
 
   var setupEventListeners = function () {
     //3.DOM public ugugdul bolgon damjuulav
@@ -263,6 +361,9 @@ var appController = (function (uiController, financeController) {
           //2.delgets deerees ene elementiig ustgana.
           uiController.deleteListItem(id);
           //3.uldegdel tootsoog shinechilj haruulna.
+
+          //////budgetiig shineer tootsoolood delgetsed uzuulne
+          updateBudget();
         }
       });
     ////////
@@ -271,6 +372,7 @@ var appController = (function (uiController, financeController) {
   return {
     init: function () {
       console.log("App starting...");
+      uiController.displayDate();
       ////////refresh bolsnii dra, dungee oruulsnii daraa bugd 0 bolgoh/////
       uiController.showBudget({
         budget: 0,
